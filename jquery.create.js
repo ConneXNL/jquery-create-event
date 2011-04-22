@@ -1,6 +1,7 @@
 // written by eric hynds (erichynds.com)
+// updated to support text nodes by hans oksendahl (hansoksendahl.com)
 // http://www.erichynds.com/jquery/jquery-create-event/
-// version 1.4 - 10/12/2010
+// version 1.4.1 - 4/21/2011
 
 (function($, _domManip, _html){
 	var selectors = [], gen = [], guid = 0, old = {};
@@ -54,37 +55,51 @@
 		
 		// crawl through the html structure passed in looking for matching elements.
 		for( var i=0, len=nodes.length; i<len; i++ ){
-			node = $(nodes[i]);
+			// make sure we're only attempting to handle objects that jquery will treat
+			// as element references
+			if (
+				typeof nodes[i] == 'object' ||
+				(
+					typeof nodes[i] == 'string' &&
+					/</.test(nodes[i]) === true
+				)
+			) {
+				node = $(nodes[i]);
 			
-			if( !node.length ){
-				continue;
-			}
-			
-			(function walk( element ){
-				element = element || node[0].parentNode;
-				var cur = (element ? element.firstChild : node[0]);
-				
-				while(cur !== null){
-					for( var x=0; x<numSelectors; x++ ){
-						if( $(cur).is(selectors[x]) ){
-							if( !cur.id ){
-								cur.id = "jqcreateevt"+(++guid);
-								gen.push(cur.id); // remember that this ID was generated
-							}
-							
-							// remember this match
-							matches.push(cur.id);
-						}
-					}
-				
-					walk( cur );
-					cur = cur.nextSibling;
+				if( !node.length ){
+					continue;
 				}
-			})();
 			
-			// the html we started with, but with ids attached to elements
-			// bound with create.
-			html = html.add( node );
+				(function walk( element ){
+					element = element || node[0].parentNode;
+					var cur = (element ? element.firstChild : node[0]);
+				
+					while(cur !== null){
+						for( var x=0; x<numSelectors; x++ ){
+							if( $(cur).is(selectors[x]) ){
+								if( !cur.id ){
+									cur.id = "jqcreateevt"+(++guid);
+									gen.push(cur.id); // remember that this ID was generated
+								}
+							
+								// remember this match
+								matches.push(cur.id);
+							}
+						}
+				
+						walk( cur );
+						cur = cur.nextSibling;
+					}
+				})();
+			
+				// the html we started with, but with ids attached to elements
+				// bound with create.
+				html = html.add( node );
+			}
+			// if we can't create an element create a text node
+			else {
+				html = document.createTextNode(nodes[i]);
+			}
 		}
 		
 		// overwrite the passed in html with the new html
