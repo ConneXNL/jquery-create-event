@@ -1,7 +1,7 @@
 // based in pluggin by eric hynds (erichynds.com)
 // that was updated to support text nodes by hans oksendahl (hansoksendahl.com)
-// rewriten by Emilio Llamas (emilio.llamasalba@yahoo.com)
 // http://www.erichynds.com/jquery/jquery-create-event/
+// full rewrite by Emilio Llamas (yumok@yahoo.com)
 // version 1.5 - 5/10/2011
 
 (function($, _domManip, _html){
@@ -55,6 +55,18 @@
 							 	$.event.trigger("create", {}, elem);
 							}
 						}
+
+						$(elem).find(selectors[x]).each(function()
+						{
+							// double check to make sure the event hasn't already fired.
+							// can happen with wrap()
+							if( !$.data( this, "jqcreateevt") )
+							{
+								$.data(this, "jqcreateevt", true);
+							 	$.event.trigger("create", {}, this);
+							}
+
+						});
 
 				}
 			}
