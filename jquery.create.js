@@ -25,6 +25,43 @@
 		}
 	};
 
+	// puede llamarse sobre los elementos creados con .innerHTML o otros metodos externos a jquery
+	$.fn.triggerCreateEvent = function ()
+	{
+		var $elem = this;
+
+		var numSelectors = selectors.length;
+//			console.log("checking selectors");
+		for( var x=0; x<numSelectors; x++ )
+		{
+//					console.log("checking selector:",selectors[x],elem);
+			if( $elem.is(selectors[x]) )
+			{
+				// double check to make sure the event hasn't already fired.
+				// can happen with wrap()
+				if( !$.data( $elem, "jqcreateevt") )
+				{
+					$.data($elem, "jqcreateevt", true);
+				 	$.event.trigger("create", {}, $elem);
+				}
+			}
+
+			$elem.find(selectors[x]).each(function()
+			{
+				// double check to make sure the event hasn't already fired.
+				// can happen with wrap()
+				if( !$.data( this, "jqcreateevt") )
+				{
+					$.data(this, "jqcreateevt", true);
+				 	$.event.trigger("create", {}, this);
+				}
+
+			});
+
+		}
+
+	}
+
 	// deal with 99% of DOM manip methods
 	$.fn.domManip = function( args, table, callback )
 	{
@@ -34,42 +71,50 @@
 
 		arguments[2] = function (elem)
 		{
+			// [this] es el objeto sobre el que se esta haciendo el append, html, etc...  y [elem] es el item 'creado'
+
 			//alert("stop callback");
 
+
+			// aplicamos el callback, para que termine de hacer el append o lo que sea y el selector funcione correctamente
+			//   (ej. si el selector es ".parentclass > .childclass", y estamos haciendo append de un nodo .childclass dentro
+			//     de un nodo .parentclass, no cumple el selector hasta que se hace efectivo el append)
 			var ret = true_callback.apply(this,arguments);
 
+
+			$(elem).triggerCreateEvent();
+
+/*
 			var numSelectors = selectors.length;
-			if( !$.data( elem, "jqcreateevt") )
+//			console.log("checking selectors");
+			for( var x=0; x<numSelectors; x++ )
 			{
-//				console.log("checking selectors");
-				for( var x=0; x<numSelectors; x++ )
-				{
-//						console.log("checking selector:",selectors[x],elem);
-						if( $(elem).is(selectors[x]) )
+//					console.log("checking selector:",selectors[x],elem);
+					if( $(elem).is(selectors[x]) )
+					{
+						// double check to make sure the event hasn't already fired.
+						// can happen with wrap()
+						if( !$.data( elem, "jqcreateevt") )
 						{
-							// double check to make sure the event hasn't already fired.
-							// can happen with wrap()
-							if( !$.data( elem, "jqcreateevt") )
-							{
-								$.data(elem, "jqcreateevt", true);
-							 	$.event.trigger("create", {}, elem);
-							}
+							$.data(elem, "jqcreateevt", true);
+						 	$.event.trigger("create", {}, elem);
+						}
+					}
+
+					$(elem).find(selectors[x]).each(function()
+					{
+						// double check to make sure the event hasn't already fired.
+						// can happen with wrap()
+						if( !$.data( this, "jqcreateevt") )
+						{
+							$.data(this, "jqcreateevt", true);
+						 	$.event.trigger("create", {}, this);
 						}
 
-						$(elem).find(selectors[x]).each(function()
-						{
-							// double check to make sure the event hasn't already fired.
-							// can happen with wrap()
-							if( !$.data( this, "jqcreateevt") )
-							{
-								$.data(this, "jqcreateevt", true);
-							 	$.event.trigger("create", {}, this);
-							}
+					});
 
-						});
-
-				}
 			}
+*/
 
 			return ret;
 		};
