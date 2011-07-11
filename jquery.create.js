@@ -2,7 +2,7 @@
 // that was updated to support text nodes by hans oksendahl (hansoksendahl.com)
 // http://www.erichynds.com/jquery/jquery-create-event/
 // full rewrite by Emilio Llamas (yumok@yahoo.com)
-// version 1.5 - 5/10/2011
+// version 1.5.1 - 7/11/2011
 
 (function($, _domManip, _html){
 	var selectors = [], gen = [], guid = 0, old = {};
@@ -28,38 +28,52 @@
 	// puede llamarse sobre los elementos creados con .innerHTML o otros metodos externos a jquery
 	$.fn.triggerCreateEvent = function ()
 	{
-		var $elem = this;
-
-		var numSelectors = selectors.length;
-//			console.log("checking selectors");
-		for( var x=0; x<numSelectors; x++ )
+		this.each(function()
 		{
-//					console.log("checking selector:",selectors[x],elem);
-			if( $elem.is(selectors[x]) )
+			var elem = this;
+			var $elem = $(this);
+
+			var numSelectors = selectors.length;
+//			console.log("checking selectors");
+			for( var x=0; x<numSelectors; x++ )
 			{
-				// double check to make sure the event hasn't already fired.
-				// can happen with wrap()
-				if( !$.data( $elem, "jqcreateevt") )
+				//console.log("checking selector:",selectors[x],$elem);
+
+				if( $elem.is(selectors[x]) )
 				{
-					$.data($elem, "jqcreateevt", true);
-				 	$.event.trigger("create", {}, $elem);
+					// double check to make sure the event hasn't already fired.
+					// can happen with wrap()
+					if( !$.data( elem, "jqcreateevt") )
+					{
+//						console.log("trigger-create:",selectors[x],elem);
+						$.data(elem, "jqcreateevt", true);
+					 	$.event.trigger("create", {}, elem);
+					}
+					else
+					{
+//						console.log("had-triggered-create:",selectors[x],elem);
+					}
 				}
+
+				$elem.find(selectors[x]).each(function()
+				{
+					// double check to make sure the event hasn't already fired.
+					// can happen with wrap()
+					if( !$.data( this, "jqcreateevt") )
+					{
+//						console.log("trigger-create(inner):",selectors[x],this);
+						$.data(this, "jqcreateevt", true);
+					 	$.event.trigger("create", {}, this);
+					}
+					else
+					{
+//						console.log("had-triggered-create(inner):",selectors[x],this);
+					}
+
+				});
+
 			}
-
-			$elem.find(selectors[x]).each(function()
-			{
-				// double check to make sure the event hasn't already fired.
-				// can happen with wrap()
-				if( !$.data( this, "jqcreateevt") )
-				{
-					$.data(this, "jqcreateevt", true);
-				 	$.event.trigger("create", {}, this);
-				}
-
-			});
-
-		}
-
+		});
 	}
 
 	// deal with 99% of DOM manip methods
@@ -84,37 +98,6 @@
 
 			$(elem).triggerCreateEvent();
 
-/*
-			var numSelectors = selectors.length;
-//			console.log("checking selectors");
-			for( var x=0; x<numSelectors; x++ )
-			{
-//					console.log("checking selector:",selectors[x],elem);
-					if( $(elem).is(selectors[x]) )
-					{
-						// double check to make sure the event hasn't already fired.
-						// can happen with wrap()
-						if( !$.data( elem, "jqcreateevt") )
-						{
-							$.data(elem, "jqcreateevt", true);
-						 	$.event.trigger("create", {}, elem);
-						}
-					}
-
-					$(elem).find(selectors[x]).each(function()
-					{
-						// double check to make sure the event hasn't already fired.
-						// can happen with wrap()
-						if( !$.data( this, "jqcreateevt") )
-						{
-							$.data(this, "jqcreateevt", true);
-						 	$.event.trigger("create", {}, this);
-						}
-
-					});
-
-			}
-*/
 
 			return ret;
 		};
@@ -131,10 +114,13 @@
 		// if no create events are bound, html() is being called as a setter,
 		// or the value is a function, fire the original and peace out.  only string values use innerHTML;
 		// function values use append() which is covered by $.fn.domManip
-		if( !selectors.length || $.isFunction(value) || typeof value === "undefined" || !value.length ){
+		if( typeof value != "string"  && (!selectors.length || $.isFunction(value) || typeof value === "undefined" || !value.length ))
+		{
+			//console.log("original.html():",value)
 			return _html.apply( this, arguments );
 		}
 
+		//console.log("innerHTMLcase.html():",value)
 		// me salto el paso de intentar usar innerHTML... por lo que saltara el domanip
 		//console.log("saltando innerHTML:",value);
 		this.empty().append( value );
